@@ -6,6 +6,7 @@
 # Board
 
 - Arduino uno R4 with WiFi
+- baud rate: 115200
 
 # components
 
