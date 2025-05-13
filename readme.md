@@ -10,7 +10,7 @@
 
 # components
 
-- sen5x sensor
+- Sesirion SEN5x sensor
 - Arduino uno R4 with WiFi
 - SD card module
 - RTC Modules(HW-111)
@@ -22,6 +22,10 @@
 - Sesirion Core
 - Sesirion I2C SEN5X
 - Adafruit BusIO
+- ArduinoGraphics
+- Blynk
+- BlynkNcpDriver
+- WiFiNINA
 
 # Connections
 
