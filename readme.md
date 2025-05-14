@@ -25,7 +25,26 @@
 - ArduinoGraphics
 - Blynk
 - BlynkNcpDriver
-- WiFiNINA
+
+# Blynk Vurtual Pins
+
+- V0: PM1.0
+- V1: PM2.5
+- V2: PM4.0
+- V3: PM10
+- V4: PM1.0
+- V5: PM2.5
+- V6: PM4.0
+- V7: PM10
+- V8: refresh bottom
+- V9: show PM1.0 on the LED matrix
+- V10: show PM2.5 on the LED matrix
+- V11: show PM4.0 on the LED matrix
+- V12: show PM10 on the LED matrix
+- V13: show Humidity on the LED matrix
+- V14: show Temperature on the LED matrix
+- V15: show VOC on the LED matrix
+- V16: show NOx on the LED matrix
 
 # Connections
 
