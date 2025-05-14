@@ -2,6 +2,7 @@
 #define BLYNK_TEMPLATE_NAME "air sensor"
 #define BLYNK_AUTH_TOKEN "JvCsXuEoVqWsifvcW5izns7BB0H7-OuH"
 
+#include <Adafruit_ADS1X15.h>
 #include <Arduino.h>
 #include <BlynkSimpleWifi.h>
 #include <SPI.h>
@@ -16,9 +17,12 @@
 
 #define MAXTRIX_SPEED 50
 #define SD_CS_PIN 9  // SD card chip select pin
-
-char ssid[] = "IIA";
-char pass[] = "Iia-2020!-863";
+// #define SSID "IIA"
+// #define PASS "Iia-2020!-863"
+#define SSID "TIM-57479975"
+#define PASS "NefertitiPopsie95!"
+char ssid[] = SSID;
+char pass[] = PASS;
 
 // Global sensor value variables
 float g_pm1p0 = 0;
@@ -30,12 +34,12 @@ float g_temperature = 0;
 float g_vocIndex = 0;
 float g_noxIndex = 0;
 
-RTCModule rtcModule;
-SEN5xModule sen5xModule;
-SdFat SD;
-String filename;
-ArduinoLEDMatrix matrix;
-
+RTCModule rtcModule;      // Create an instance of the RTC module
+SEN5xModule sen5xModule;  // Create an instance of the SEN5x sensor
+SdFat SD;                 // Create an instance of the SD card
+String filename;          // Filename for the SD card
+ArduinoLEDMatrix matrix;  // Create an instance of the LED matrix
+Adafruit_ADS1115 ads;     // Create an instance of the ADS1115 ADC
 // Blynk callback for virtual pin V8 (refresh control)
 BLYNK_WRITE(V8) {
     bool refresh = 0;
@@ -237,10 +241,10 @@ BLYNK_WRITE(V16) {  // show NOx digital value on LED matrix
 void setup() {
     Serial.begin(115200);
     matrix.begin();  // Initialize LED matrix
+    Wire.begin();    // Initialize I2C communication
     while (!Serial) {
         delay(100);
     }
-
     // Begin Blynk connection process
     Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
 
@@ -264,6 +268,14 @@ void setup() {
     if (!sen5xModule.begin() || !sen5xModule.startMeasurement()) {
         while (1);
     }
+    // Initialize ADS1115 ADC
+    if (!ads.begin()) {
+        Serial.println("Failed to initialize ADS1115. Check wiring!");
+        while (1) {
+            delay(10);
+        }
+    }
+    Serial.println("ADS1115 initialized successfully.");
 
     // Initialize SD card
     if (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(4))) {
@@ -312,6 +324,10 @@ void loop() {
                       String(g_temperature) + "," + String(g_vocIndex) + "," +
                       String(g_noxIndex) + "\n";
 
+    int16_t adcValue =
+        ads.readADC_SingleEnded(0);  // Read ADC value from channel 0
+    Serial.print("ADC Value: ");
+    Serial.println(adcValue);
     // Write data line to SD card file
     File dataFile = SD.open(filename, FILE_WRITE);
     if (dataFile) {

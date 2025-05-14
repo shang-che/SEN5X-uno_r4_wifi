@@ -25,6 +25,8 @@
 - ArduinoGraphics
 - Blynk
 - BlynkNcpDriver
+- Adafruit BusIO
+- Adafruit ADS1X15
 
 # Blynk Vurtual Pins
 
