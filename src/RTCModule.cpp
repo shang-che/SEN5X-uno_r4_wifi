@@ -7,7 +7,7 @@ bool RTCModule::begin() {
         Serial.println("RTC initialization failed!");
         return false;
     }
-    Serial.println("RTC initialization succeeded.");
+    Serial.println("RTC initialized successfully.");
     return true;
 }
 

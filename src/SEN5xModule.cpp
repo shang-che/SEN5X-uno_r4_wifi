@@ -9,7 +9,7 @@ bool SEN5xModule::begin() {
         Serial.println("SEN5x initialization failed!");
         return false;
     }
-    Serial.println("SEN5x initialization succeeded.");
+    Serial.println("SEN5x initialized successfully.");
     return true;
 }
 
