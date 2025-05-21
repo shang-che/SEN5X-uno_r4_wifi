@@ -14,13 +14,12 @@
 #include "Arduino_LED_Matrix.h"
 #include "RTCModule.h"
 #include "SEN5xModule.h"
-
 #define MAXTRIX_SPEED 50
 #define SD_CS_PIN 9  // SD card chip select pin
-// #define SSID "IIA"
-// #define PASS "Iia-2020!-863"
-#define SSID "TIM-57479975"
-#define PASS "NefertitiPopsie95!"
+#define SSID "IIA"
+#define PASS "Iia-2020!-863"
+// #define SSID "TIM-57479975"
+// #define PASS "NefertitiPopsie95!"
 char ssid[] = SSID;
 char pass[] = PASS;
 
@@ -237,7 +236,33 @@ BLYNK_WRITE(V16) {  // show NOx digital value on LED matrix
         matrix.endDraw();
     }
 }
+void scanI2CDevices() {
+    Serial.println("開始掃描 I2C 總線設備...");
+    byte error, address;
+    int deviceCount = 0;
 
+    for (address = 1; address < 127; address++) {
+        Wire.beginTransmission(address);
+        error = Wire.endTransmission();
+
+        if (error == 0) {
+            Serial.print("在位址 0x");
+            if (address < 16) Serial.print("0");
+            Serial.print(address, HEX);
+            Serial.println(" 找到設備!");
+            deviceCount++;
+            delay(5);
+        }
+    }
+
+    if (deviceCount == 0) {
+        Serial.println("未發現任何 I2C 設備");
+    } else {
+        Serial.print("共發現 ");
+        Serial.print(deviceCount);
+        Serial.println(" 個 I2C 設備");
+    }
+}
 void setup() {
     Serial.begin(115200);
     matrix.begin();  // Initialize LED matrix
@@ -268,21 +293,24 @@ void setup() {
     if (!sen5xModule.begin() || !sen5xModule.startMeasurement()) {
         while (1);
     }
-    // Initialize ADS1115 ADC
+    // Initialize ADS1115
     if (!ads.begin()) {
         Serial.println("Failed to initialize ADS1115. Check wiring!");
         while (1) {
-            delay(10);
+            delay(100);
         }
+    } else {
+        Serial.println("ADS1115 initialized successfully.");
     }
-    Serial.println("ADS1115 initialized successfully.");
-
+    // 設定預設增益: GAIN_TWOTHIRDS 對應 ±6.144V 範圍，
+    // 每個 LSB 大約 0.1875 mV (0.0001875 V)
+    ads.setGain(GAIN_TWOTHIRDS);
     // Initialize SD card
     if (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(4))) {
         Serial.println("SD card initialization failed!");
         while (1);
     }
-    Serial.println("SD card initialization succeeded.");
+    Serial.println("SD card initialized successfully.");
 
     // Setup filename based on RTC timestamp
     String rawTimestamp = rtcModule.getTimestamp();
@@ -293,7 +321,9 @@ void setup() {
 
     // Write header to SD file
     String header =
-        "Time,PM1.0,PM2.5,PM4.0,PM10.0,Humidity,Temperature,VOC,NOx\n";
+        "Time,PM1.0,PM2.5,PM4.0,PM10.0,Humidity,Temperature,VOC,NOx,CH0 "
+        "Raw,CH0 Voltage,CH1 Raw,CH1 Voltage,CH2 Raw,CH2 Voltage,CH3 Raw,CH3 "
+        "Voltage\n";
     File dataFile = SD.open(filename, FILE_WRITE);
     if (dataFile) {
         dataFile.print(header);
@@ -306,7 +336,7 @@ void setup() {
 
 void loop() {
     Blynk.run();
-
+    // scanI2CDevices();
     // Get current timestamp
     String timestamp = rtcModule.getTimestamp();
 
@@ -316,18 +346,51 @@ void loop() {
         delay(1000);
         return;
     }
+    // read ADS1115 values channel 0~3
+    int16_t value0 = ads.readADC_SingleEnded(0);
+    int16_t value1 = ads.readADC_SingleEnded(1);
+    int16_t value2 = ads.readADC_SingleEnded(2);
+    int16_t value3 = ads.readADC_SingleEnded(3);
 
+    // Convert raw values to voltage (0.1875 mV/LSB)
+    float conversionFactor = 0.0001875;
+    float volt0 = value0 * conversionFactor;
+    float volt1 = value1 * conversionFactor;
+    float volt2 = value2 * conversionFactor;
+    float volt3 = value3 * conversionFactor;
+
+    // // Debugging output for ADS1115 readings
+    // Serial.println("------ ADS1115 Readings ------");
+    // Serial.print("Ch0: Raw = ");
+    // Serial.print(value0);
+    // Serial.print(", Voltage = ");
+    // Serial.print(volt0, 4);
+    // Serial.println(" V");
+    // Serial.print("Ch1: Raw = ");
+    // Serial.print(value1);
+    // Serial.print(", Voltage = ");
+    // Serial.print(volt1, 4);
+    // Serial.println(" V");
+    // Serial.print("Ch2: Raw = ");
+    // Serial.print(value2);
+    // Serial.print(", Voltage = ");
+    // Serial.print(volt2, 4);
+    // Serial.println(" V");
+    // Serial.print("Ch3: Raw = ");
+    // Serial.print(value3);
+    // Serial.print(", Voltage = ");
+    // Serial.print(volt3, 4);
+    // Serial.println(" V");
+    
     // Prepare data line string for SD card logging
-    String dataLine = timestamp + "," + String(g_pm1p0) + "," +
-                      String(g_pm2p5) + "," + String(g_pm4p0) + "," +
-                      String(g_pm10p0) + "," + String(g_humidity) + "," +
-                      String(g_temperature) + "," + String(g_vocIndex) + "," +
-                      String(g_noxIndex) + "\n";
+    String dataLine =
+        timestamp + "," + String(g_pm1p0) + "," + String(g_pm2p5) + "," +
+        String(g_pm4p0) + "," + String(g_pm10p0) + "," + String(g_humidity) +
+        "," + String(g_temperature) + "," + String(g_vocIndex) + "," +
+        String(g_noxIndex) + "," + String(value0) + "," + String(volt0) + "," +
+        String(value1) + "," + String(volt1) + "," + String(value2) + "," +
+        String(volt2) + "," + String(value3) + "," + String(volt3) + "\n";
 
-    int16_t adcValue =
-        ads.readADC_SingleEnded(0);  // Read ADC value from channel 0
-    Serial.print("ADC Value: ");
-    Serial.println(adcValue);
     // Write data line to SD card file
     File dataFile = SD.open(filename, FILE_WRITE);
     if (dataFile) {
