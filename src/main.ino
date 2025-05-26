@@ -1,7 +1,4 @@
-#define BLYNK_TEMPLATE_ID "TMPL4VE-IYzNe"
-#define BLYNK_TEMPLATE_NAME "air sensor"
-#define BLYNK_AUTH_TOKEN "JvCsXuEoVqWsifvcW5izns7BB0H7-OuH"
-
+#include "BlynkConfig.h"
 #include <Adafruit_ADS1X15.h>
 #include <Arduino.h>
 #include <BlynkSimpleWifi.h>
@@ -12,16 +9,11 @@
 
 #include "ArduinoGraphics.h"
 #include "Arduino_LED_Matrix.h"
+
 #include "RTCModule.h"
 #include "SEN5xModule.h"
 #define MAXTRIX_SPEED 50
 #define SD_CS_PIN 9  // SD card chip select pin
-#define SSID "IIA"
-#define PASS "Iia-2020!-863"
-// #define SSID "TIM-57479975"
-// #define PASS "NefertitiPopsie95!"
-char ssid[] = SSID;
-char pass[] = PASS;
 
 // Global sensor value variables
 float g_pm1p0 = 0;
@@ -271,7 +263,7 @@ void setup() {
         delay(100);
     }
     // Begin Blynk connection process
-    Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+    Blynk.begin(BLYNK_AUTH_TOKEN, blynk_ssid, blynk_pass);
 
     // Wait for WiFi connection with timeout (10 seconds)
     unsigned long startTime = millis();
@@ -381,7 +373,7 @@ void loop() {
     // Serial.print(", Voltage = ");
     // Serial.print(volt3, 4);
     // Serial.println(" V");
-    
+
     // Prepare data line string for SD card logging
     String dataLine =
         timestamp + "," + String(g_pm1p0) + "," + String(g_pm2p5) + "," +
