@@ -38,6 +38,11 @@ String filename;          // Filename for the SD card
 ArduinoLEDMatrix matrix;  // Create an instance of the LED matrix
 Adafruit_ADS1115 ads;     // Create an instance of the ADS1115 ADC
 // Blynk callback for virtual pin V8 (refresh control)
+uint8_t wifiBitmap_On[8][12] = {
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0},
+    {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0},
+    {0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0}, {0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0}};
 BLYNK_WRITE(V8) {
     bool refresh = 0;
     // Get value from V8 as an integer
@@ -80,8 +85,8 @@ BLYNK_WRITE(V9) {  // show pm1.0 digital value on LED matrix
         matrix.beginText(0, 1, 0xFFFFFF);
         matrix.println(text);
         matrix.endText(SCROLL_LEFT);
-
         matrix.endDraw();
+        matrix.renderBitmap(wifiBitmap_On, 8, 12);
     }
 }
 BLYNK_WRITE(V10) {  // show pm2.5 digital value on LED matrix
@@ -104,6 +109,7 @@ BLYNK_WRITE(V10) {  // show pm2.5 digital value on LED matrix
         matrix.endText(SCROLL_LEFT);
 
         matrix.endDraw();
+        matrix.renderBitmap(wifiBitmap_On, 8, 12);
     }
 }
 BLYNK_WRITE(V11) {  // show pm4.0 digital value on LED matrix
@@ -126,6 +132,7 @@ BLYNK_WRITE(V11) {  // show pm4.0 digital value on LED matrix
         matrix.endText(SCROLL_LEFT);
 
         matrix.endDraw();
+        matrix.renderBitmap(wifiBitmap_On, 8, 12);
     }
 }
 BLYNK_WRITE(V12) {  // show pm10.0 digital value on LED matrix
@@ -148,6 +155,7 @@ BLYNK_WRITE(V12) {  // show pm10.0 digital value on LED matrix
         matrix.endText(SCROLL_LEFT);
 
         matrix.endDraw();
+        matrix.renderBitmap(wifiBitmap_On, 8, 12);
     }
 }
 BLYNK_WRITE(V13) {  // show humidity digital value on LED matrix
@@ -170,6 +178,7 @@ BLYNK_WRITE(V13) {  // show humidity digital value on LED matrix
         matrix.endText(SCROLL_LEFT);
 
         matrix.endDraw();
+        matrix.renderBitmap(wifiBitmap_On, 8, 12);
     }
 }
 BLYNK_WRITE(V14) {  // show temperature digital value on LED matrix
@@ -192,6 +201,7 @@ BLYNK_WRITE(V14) {  // show temperature digital value on LED matrix
         matrix.endText(SCROLL_LEFT);
 
         matrix.endDraw();
+        matrix.renderBitmap(wifiBitmap_On, 8, 12);
     }
 }
 BLYNK_WRITE(V15) {  // show VOC digital value on LED matrix
@@ -214,6 +224,7 @@ BLYNK_WRITE(V15) {  // show VOC digital value on LED matrix
         matrix.endText(SCROLL_LEFT);
 
         matrix.endDraw();
+        matrix.renderBitmap(wifiBitmap_On, 8, 12);
     }
 }
 BLYNK_WRITE(V16) {  // show NOx digital value on LED matrix
@@ -236,6 +247,7 @@ BLYNK_WRITE(V16) {  // show NOx digital value on LED matrix
         matrix.endText(SCROLL_LEFT);
 
         matrix.endDraw();
+        matrix.renderBitmap(wifiBitmap_On, 8, 12);
     }
 }
 
@@ -267,6 +279,7 @@ void setup() {
             Serial.println("Error: WiFi did not connect!");
         } else {
             Serial.println("WiFi connected successfully.");
+            matrix.renderBitmap(wifiBitmap_On, 8, 12);
         }
     } else {
         Serial.println("WiFi mode is OFF");
