@@ -67,3 +67,10 @@
   - GND -> GND
   - SDA -> SDA
   - SCL -> SCL
+
+# how to use
+
+- put BlynkConfig.h file in the src folder
+- compile the main.ino file
+- upload the code to the Arduino uno R4 with WiFi
+- open the serial monitor to check the working status
