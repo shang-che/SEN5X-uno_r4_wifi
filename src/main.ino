@@ -12,11 +12,14 @@
 
 #include "RTCModule.h"
 #include "SEN5xModule.h"
+#include "BlynkHandlers.h"
+
 #define MAXTRIX_SPEED 50
-#define SD_CS_PIN 9  // SD card chip select pin
-// WiFi Mode switch
+#define SD_CS_PIN 9             // SD card chip select pin
 #define WIFI_MODE_SWITCH_PIN 7  // Pin for WiFi mode switch
-int wifiMode = 0;               // 0: Off, 1: On
+
+int wifiMode = 0;  // 0: Off, 1: On
+
 // Global sensor value variables
 float g_pm1p0 = 0;
 float g_pm2p5 = 0;
@@ -31,225 +34,18 @@ int16_t g_adsChannel1Raw = 0;
 int16_t g_adsChannel2Raw = 0;
 int16_t g_adsChannel3Raw = 0;
 
-RTCModule rtcModule;      // Create an instance of the RTC module
-SEN5xModule sen5xModule;  // Create an instance of the SEN5x sensor
-SdFat SD;                 // Create an instance of the SD card
-String filename;          // Filename for the SD card
-ArduinoLEDMatrix matrix;  // Create an instance of the LED matrix
-Adafruit_ADS1115 ads;     // Create an instance of the ADS1115 ADC
-// Blynk callback for virtual pin V8 (refresh control)
+RTCModule rtcModule;
+SEN5xModule sen5xModule;
+SdFat SD;
+String filename;
+ArduinoLEDMatrix matrix;
+Adafruit_ADS1115 ads;
+
 uint8_t wifiBitmap_On[8][12] = {
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
     {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0},
     {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0},
     {0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0}, {0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0}};
-BLYNK_WRITE(V8) {
-    bool refresh = 0;
-    // Get value from V8 as an integer
-    refresh = bool(param.asInt());
-    Serial.print("Received from V8: ");
-    Serial.println(refresh);
-    // When refresh is 1, send the latest sensor values to Blynk virtual pins
-    // V0~V7.
-    if (refresh) {
-        Blynk.virtualWrite(V0, g_pm1p0);            // PM1.0
-        Blynk.virtualWrite(V1, g_pm2p5);            // PM2.5
-        Blynk.virtualWrite(V2, g_pm4p0);            // PM4.0
-        Blynk.virtualWrite(V3, g_pm10p0);           // PM10.0
-        Blynk.virtualWrite(V4, g_humidity);         // Humidity
-        Blynk.virtualWrite(V5, g_temperature);      // Temperature
-        Blynk.virtualWrite(V6, int(g_vocIndex));    // VOC
-        Blynk.virtualWrite(V7, int(g_noxIndex));    // NOx
-        Blynk.virtualWrite(V17, g_adsChannel0Raw);  // ADS Channel 0 Raw
-        Blynk.virtualWrite(V18, g_adsChannel1Raw);  // ADS Channel 1 Raw
-        Blynk.virtualWrite(V19, g_adsChannel2Raw);  // ADS Channel 2 Raw
-        // Blynk.virtualWrite(V20, g_adsChannel3Raw);  // ADS Channel 3 Raw
-        Serial.println("Refresh complete: Sensor data updated to web.");
-    }
-}
-BLYNK_WRITE(V9) {  // show pm1.0 digital value on LED matrix
-    // Get value from V9 as an integer
-    bool value = bool(param.asInt());
-    Serial.print("Received from V9: ");
-    Serial.println(value);
-    if (value) {
-        // Make it scroll!
-        matrix.beginDraw();
-
-        matrix.stroke(0xFFFFFFFF);
-        matrix.textScrollSpeed(MAXTRIX_SPEED);
-
-        // add the text
-        String text = "     PM1.0: " + String(g_pm1p0);
-        matrix.textFont(Font_5x7);
-        matrix.beginText(0, 1, 0xFFFFFF);
-        matrix.println(text);
-        matrix.endText(SCROLL_LEFT);
-        matrix.endDraw();
-        matrix.renderBitmap(wifiBitmap_On, 8, 12);
-    }
-}
-BLYNK_WRITE(V10) {  // show pm2.5 digital value on LED matrix
-    // Get value from V10 as an integer
-    bool value = bool(param.asInt());
-    Serial.print("Received from V10: ");
-    Serial.println(value);
-    if (value) {
-        // Make it scroll!
-        matrix.beginDraw();
-
-        matrix.stroke(0xFFFFFFFF);
-        matrix.textScrollSpeed(MAXTRIX_SPEED);
-
-        // add the text
-        String text = "     PM2.5: " + String(g_pm2p5);
-        matrix.textFont(Font_5x7);
-        matrix.beginText(0, 1, 0xFFFFFF);
-        matrix.println(text);
-        matrix.endText(SCROLL_LEFT);
-
-        matrix.endDraw();
-        matrix.renderBitmap(wifiBitmap_On, 8, 12);
-    }
-}
-BLYNK_WRITE(V11) {  // show pm4.0 digital value on LED matrix
-    // Get value from V11 as an integer
-    bool value = bool(param.asInt());
-    Serial.print("Received from V11: ");
-    Serial.println(value);
-    if (value) {
-        // Make it scroll!
-        matrix.beginDraw();
-
-        matrix.stroke(0xFFFFFFFF);
-        matrix.textScrollSpeed(MAXTRIX_SPEED);
-
-        // add the text
-        String text = "     PM4.0: " + String(g_pm4p0);
-        matrix.textFont(Font_5x7);
-        matrix.beginText(0, 1, 0xFFFFFF);
-        matrix.println(text);
-        matrix.endText(SCROLL_LEFT);
-
-        matrix.endDraw();
-        matrix.renderBitmap(wifiBitmap_On, 8, 12);
-    }
-}
-BLYNK_WRITE(V12) {  // show pm10.0 digital value on LED matrix
-    // Get value from V12 as an integer
-    bool value = bool(param.asInt());
-    Serial.print("Received from V12: ");
-    Serial.println(value);
-    if (value) {
-        // Make it scroll!
-        matrix.beginDraw();
-
-        matrix.stroke(0xFFFFFFFF);
-        matrix.textScrollSpeed(MAXTRIX_SPEED);
-
-        // add the text
-        String text = "     PM10.0: " + String(g_pm10p0);
-        matrix.textFont(Font_5x7);
-        matrix.beginText(0, 1, 0xFFFFFF);
-        matrix.println(text);
-        matrix.endText(SCROLL_LEFT);
-
-        matrix.endDraw();
-        matrix.renderBitmap(wifiBitmap_On, 8, 12);
-    }
-}
-BLYNK_WRITE(V13) {  // show humidity digital value on LED matrix
-    // Get value from V13 as an integer
-    bool value = bool(param.asInt());
-    Serial.print("Received from V13: ");
-    Serial.println(value);
-    if (value) {
-        // Make it scroll!
-        matrix.beginDraw();
-
-        matrix.stroke(0xFFFFFFFF);
-        matrix.textScrollSpeed(MAXTRIX_SPEED);
-
-        // add the text
-        String text = "     Humidity: " + String(g_humidity);
-        matrix.textFont(Font_5x7);
-        matrix.beginText(0, 1, 0xFFFFFF);
-        matrix.println(text);
-        matrix.endText(SCROLL_LEFT);
-
-        matrix.endDraw();
-        matrix.renderBitmap(wifiBitmap_On, 8, 12);
-    }
-}
-BLYNK_WRITE(V14) {  // show temperature digital value on LED matrix
-    // Get value from V14 as an integer
-    bool value = bool(param.asInt());
-    Serial.print("Received from V14: ");
-    Serial.println(value);
-    if (value) {
-        // Make it scroll!
-        matrix.beginDraw();
-
-        matrix.stroke(0xFFFFFFFF);
-        matrix.textScrollSpeed(MAXTRIX_SPEED);
-
-        // add the text
-        String text = "     Temperature: " + String(g_temperature);
-        matrix.textFont(Font_5x7);
-        matrix.beginText(0, 1, 0xFFFFFF);
-        matrix.println(text);
-        matrix.endText(SCROLL_LEFT);
-
-        matrix.endDraw();
-        matrix.renderBitmap(wifiBitmap_On, 8, 12);
-    }
-}
-BLYNK_WRITE(V15) {  // show VOC digital value on LED matrix
-    // Get value from V15 as an integer
-    bool value = bool(param.asInt());
-    Serial.print("Received from V15: ");
-    Serial.println(value);
-    if (value) {
-        // Make it scroll!
-        matrix.beginDraw();
-
-        matrix.stroke(0xFFFFFFFF);
-        matrix.textScrollSpeed(MAXTRIX_SPEED);
-
-        // add the text
-        String text = "     VOC: " + String(g_vocIndex);
-        matrix.textFont(Font_5x7);
-        matrix.beginText(0, 1, 0xFFFFFF);
-        matrix.println(text);
-        matrix.endText(SCROLL_LEFT);
-
-        matrix.endDraw();
-        matrix.renderBitmap(wifiBitmap_On, 8, 12);
-    }
-}
-BLYNK_WRITE(V16) {  // show NOx digital value on LED matrix
-    // Get value from V16 as an integer
-    bool value = bool(param.asInt());
-    Serial.print("Received from V16: ");
-    Serial.println(value);
-    if (value) {
-        // Make it scroll!
-        matrix.beginDraw();
-
-        matrix.stroke(0xFFFFFFFF);
-        matrix.textScrollSpeed(MAXTRIX_SPEED);
-
-        // add the text
-        String text = "     NOx: " + String(g_noxIndex);
-        matrix.textFont(Font_5x7);
-        matrix.beginText(0, 1, 0xFFFFFF);
-        matrix.println(text);
-        matrix.endText(SCROLL_LEFT);
-
-        matrix.endDraw();
-        matrix.renderBitmap(wifiBitmap_On, 8, 12);
-    }
-}
 
 void setup() {
     Serial.begin(115200);
