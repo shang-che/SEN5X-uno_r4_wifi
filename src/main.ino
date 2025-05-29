@@ -26,6 +26,10 @@ float g_humidity = 0;
 float g_temperature = 0;
 float g_vocIndex = 0;
 float g_noxIndex = 0;
+int16_t g_adsChannel0Raw = 0;
+int16_t g_adsChannel1Raw = 0;
+int16_t g_adsChannel2Raw = 0;
+int16_t g_adsChannel3Raw = 0;
 
 RTCModule rtcModule;      // Create an instance of the RTC module
 SEN5xModule sen5xModule;  // Create an instance of the SEN5x sensor
@@ -43,14 +47,18 @@ BLYNK_WRITE(V8) {
     // When refresh is 1, send the latest sensor values to Blynk virtual pins
     // V0~V7.
     if (refresh) {
-        Blynk.virtualWrite(V0, g_pm1p0);          // PM1.0
-        Blynk.virtualWrite(V1, g_pm2p5);          // PM2.5
-        Blynk.virtualWrite(V2, g_pm4p0);          // PM4.0
-        Blynk.virtualWrite(V3, g_pm10p0);         // PM10.0
-        Blynk.virtualWrite(V4, g_humidity);       // Humidity
-        Blynk.virtualWrite(V5, g_temperature);    // Temperature
-        Blynk.virtualWrite(V6, int(g_vocIndex));  // VOC
-        Blynk.virtualWrite(V7, int(g_noxIndex));  // NOx
+        Blynk.virtualWrite(V0, g_pm1p0);            // PM1.0
+        Blynk.virtualWrite(V1, g_pm2p5);            // PM2.5
+        Blynk.virtualWrite(V2, g_pm4p0);            // PM4.0
+        Blynk.virtualWrite(V3, g_pm10p0);           // PM10.0
+        Blynk.virtualWrite(V4, g_humidity);         // Humidity
+        Blynk.virtualWrite(V5, g_temperature);      // Temperature
+        Blynk.virtualWrite(V6, int(g_vocIndex));    // VOC
+        Blynk.virtualWrite(V7, int(g_noxIndex));    // NOx
+        Blynk.virtualWrite(V17, g_adsChannel0Raw);  // ADS Channel 0 Raw
+        Blynk.virtualWrite(V18, g_adsChannel1Raw);  // ADS Channel 1 Raw
+        Blynk.virtualWrite(V19, g_adsChannel2Raw);  // ADS Channel 2 Raw
+        // Blynk.virtualWrite(V20, g_adsChannel3Raw);  // ADS Channel 3 Raw
         Serial.println("Refresh complete: Sensor data updated to web.");
     }
 }
@@ -332,26 +340,27 @@ void loop() {
         return;
     }
     // read ADS1115 values channel 0~3
-    int16_t value0 = ads.readADC_SingleEnded(0);
-    int16_t value1 = ads.readADC_SingleEnded(1);
-    int16_t value2 = ads.readADC_SingleEnded(2);
-    int16_t value3 = ads.readADC_SingleEnded(3);
+    g_adsChannel0Raw = ads.readADC_SingleEnded(0);
+    g_adsChannel1Raw = ads.readADC_SingleEnded(1);
+    g_adsChannel2Raw = ads.readADC_SingleEnded(2);
+    g_adsChannel3Raw = ads.readADC_SingleEnded(3);
 
     // Convert raw values to voltage (0.1875 mV/LSB)
     float conversionFactor = 0.0001875;
-    float volt0 = value0 * conversionFactor;
-    float volt1 = value1 * conversionFactor;
-    float volt2 = value2 * conversionFactor;
-    float volt3 = value3 * conversionFactor;
+    float volt0 = g_adsChannel0Raw * conversionFactor;
+    float volt1 = g_adsChannel1Raw * conversionFactor;
+    float volt2 = g_adsChannel2Raw * conversionFactor;
+    float volt3 = g_adsChannel3Raw * conversionFactor;
 
     // Prepare data line string for SD card logging
     String dataLine =
         timestamp + "," + String(g_pm1p0) + "," + String(g_pm2p5) + "," +
         String(g_pm4p0) + "," + String(g_pm10p0) + "," + String(g_humidity) +
         "," + String(g_temperature) + "," + String(g_vocIndex) + "," +
-        String(g_noxIndex) + "," + String(value0) + "," + String(volt0) + "," +
-        String(value1) + "," + String(volt1) + "," + String(value2) + "," +
-        String(volt2) + "," + String(value3) + "," + String(volt3) + "\n";
+        String(g_noxIndex) + "," + String(g_adsChannel0Raw) + "," +
+        String(volt0) + "," + String(g_adsChannel1Raw) + "," + String(volt1) +
+        "," + String(g_adsChannel2Raw) + "," + String(volt2) + "," +
+        String(g_adsChannel3Raw) + "," + String(volt3) + "\n";
 
     // Write data line to SD card file
     File dataFile = SD.open(filename, FILE_WRITE);
