@@ -14,7 +14,9 @@
 #include "SEN5xModule.h"
 #define MAXTRIX_SPEED 50
 #define SD_CS_PIN 9  // SD card chip select pin
-
+// WiFi Mode switch
+#define WIFI_MODE_SWITCH_PIN 7  // Pin for WiFi mode switch
+int wifiMode = 0;               // 0: Off, 1: On
 // Global sensor value variables
 float g_pm1p0 = 0;
 float g_pm2p5 = 0;
@@ -228,53 +230,41 @@ BLYNK_WRITE(V16) {  // show NOx digital value on LED matrix
         matrix.endDraw();
     }
 }
-void scanI2CDevices() {
-    Serial.println("開始掃描 I2C 總線設備...");
-    byte error, address;
-    int deviceCount = 0;
 
-    for (address = 1; address < 127; address++) {
-        Wire.beginTransmission(address);
-        error = Wire.endTransmission();
-
-        if (error == 0) {
-            Serial.print("在位址 0x");
-            if (address < 16) Serial.print("0");
-            Serial.print(address, HEX);
-            Serial.println(" 找到設備!");
-            deviceCount++;
-            delay(5);
-        }
-    }
-
-    if (deviceCount == 0) {
-        Serial.println("未發現任何 I2C 設備");
-    } else {
-        Serial.print("共發現 ");
-        Serial.print(deviceCount);
-        Serial.println(" 個 I2C 設備");
-    }
-}
 void setup() {
     Serial.begin(115200);
     matrix.begin();  // Initialize LED matrix
     Wire.begin();    // Initialize I2C communication
+
     while (!Serial) {
         delay(100);
     }
-    // Begin Blynk connection process
-    Blynk.begin(BLYNK_AUTH_TOKEN, blynk_ssid, blynk_pass);
+    pinMode(7, INPUT_PULLUP);  // Set pin 7 as input with pull-up resistor to be
+                               // a switch
+    wifiMode = digitalRead(7);
 
-    // Wait for WiFi connection with timeout (10 seconds)
-    unsigned long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - startTime < 10000)) {
-        delay(500);
-    }
-    if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("Error: WiFi did not connect!");
+    if (wifiMode == LOW) {
+        Serial.println("WiFi mode is ON");
+        // If pin 7 is connected to GND, WiFi mode is ON
+        // Begin Blynk connection process
+        Blynk.begin(BLYNK_AUTH_TOKEN, blynk_ssid, blynk_pass);
+
+        // Wait for WiFi connection with timeout (10 seconds)
+        unsigned long startTime = millis();
+        while (WiFi.status() != WL_CONNECTED &&
+               (millis() - startTime < 10000)) {
+            delay(500);
+        }
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("Error: WiFi did not connect!");
+        } else {
+            Serial.println("WiFi connected successfully.");
+        }
     } else {
-        Serial.println("WiFi connected successfully.");
+        Serial.println("WiFi mode is OFF");
     }
+    delay(2000);  // Wait for serial monitor to be ready
+    Serial.println("Initializing modules...");
 
     // Initialize RTC
     if (!rtcModule.begin()) {
@@ -327,8 +317,11 @@ void setup() {
 }
 
 void loop() {
-    Blynk.run();
-    // scanI2CDevices();
+    if (wifiMode == LOW) {
+        // If WiFi mode is OFF, do not run Blynk
+        Blynk.run();
+    }
+
     // Get current timestamp
     String timestamp = rtcModule.getTimestamp();
 
@@ -351,29 +344,6 @@ void loop() {
     float volt2 = value2 * conversionFactor;
     float volt3 = value3 * conversionFactor;
 
-    // // Debugging output for ADS1115 readings
-    // Serial.println("------ ADS1115 Readings ------");
-    // Serial.print("Ch0: Raw = ");
-    // Serial.print(value0);
-    // Serial.print(", Voltage = ");
-    // Serial.print(volt0, 4);
-    // Serial.println(" V");
-    // Serial.print("Ch1: Raw = ");
-    // Serial.print(value1);
-    // Serial.print(", Voltage = ");
-    // Serial.print(volt1, 4);
-    // Serial.println(" V");
-    // Serial.print("Ch2: Raw = ");
-    // Serial.print(value2);
-    // Serial.print(", Voltage = ");
-    // Serial.print(volt2, 4);
-    // Serial.println(" V");
-    // Serial.print("Ch3: Raw = ");
-    // Serial.print(value3);
-    // Serial.print(", Voltage = ");
-    // Serial.print(volt3, 4);
-    // Serial.println(" V");
-
     // Prepare data line string for SD card logging
     String dataLine =
         timestamp + "," + String(g_pm1p0) + "," + String(g_pm2p5) + "," +
@@ -392,6 +362,11 @@ void loop() {
         Serial.print(dataLine);
     } else {
         Serial.println("Can't write to SD card!");
+    }
+    if (wifiMode == LOW) {
+        Serial.println("WiFi mode is ON__loop");
+    } else {
+        Serial.println("WiFi mode is OFF__loop");
     }
     delay(1000);
 }
