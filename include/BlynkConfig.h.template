@@ -1,6 +1,7 @@
 #ifndef BLYNK_CONFIG_H
 #define BLYNK_CONFIG_H
-
+//-------------------------------------------
+//Modify it
 #define BLYNK_TEMPLATE_ID "YOUR_TEMPLATE_ID"
 #define BLYNK_TEMPLATE_NAME "YOUR_TEMPLATE_NAME"
 #define BLYNK_AUTH_TOKEN "YOUR_BLYNK_AUTH_TOKEN"
@@ -8,6 +9,8 @@
 #define BLYNK_WIFI_SSID "YOUR_WIFI_SSID"
 #define BLYNK_WIFI_PASS "YOUR_WIFI_PASSWORD"
 
+
+//-------------------------------------------
 char blynk_ssid[] = BLYNK_WIFI_SSID;
 char blynk_pass[] = BLYNK_WIFI_PASS;
 
