@@ -8,10 +8,11 @@ extern ArduinoLEDMatrix matrix;
 // Global sensor variables (defined externally)
 extern float g_pm1p0, g_pm2p5, g_pm4p0, g_pm10p0, g_humidity, g_temperature,
     g_vocIndex, g_noxIndex;
-extern int16_t g_adsChannel0Raw, g_adsChannel1Raw, g_adsChannel2Raw;
+extern int16_t g_adsChannel0Raw, g_adsChannel1Raw, g_adsChannel2Raw,
+    g_adsChannel3Raw;
 
 #define MAXTRIX_SPEED 50
-extern uint8_t wifiBitmap_On[8][12];
+// extern uint8_t wifiBitmap_On[8][12];
 
 // V8: Refresh sensor data to Blynk
 BLYNK_WRITE(V8) {
@@ -28,6 +29,7 @@ BLYNK_WRITE(V8) {
         Blynk.virtualWrite(V17, g_adsChannel0Raw);
         Blynk.virtualWrite(V18, g_adsChannel1Raw);
         Blynk.virtualWrite(V19, g_adsChannel2Raw);
+        // Blynk.virtualWrite(V20, g_adsChannel3Raw);
     }
 }
 
@@ -44,7 +46,6 @@ BLYNK_WRITE(V8) {
             matrix.println(text);                                \
             matrix.endText(SCROLL_LEFT);                         \
             matrix.endDraw();                                    \
-            matrix.renderBitmap(wifiBitmap_On, 8, 12);           \
         }                                                        \
     }
 
