@@ -14,6 +14,7 @@
 - Arduino uno R4 with WiFi
 - SD card module
 - RTC Modules(HW-111)
+- ADS1115 ADC module
 
 # Arduino Libraries
 
@@ -71,6 +72,7 @@
 # how to use
 
 - put BlynkConfig.h file in the src folder
+- fill in the BlynkConfig.h file with your Blynk auth token and WiFi credentials
 - compile the main.ino file
 - upload the code to the Arduino uno R4 with WiFi
-- open the serial monitor to check the working status
+- you canopen the serial monitor to check the working status
