@@ -33,6 +33,16 @@ int16_t g_adsChannel0Raw = 0;
 int16_t g_adsChannel1Raw = 0;
 int16_t g_adsChannel2Raw = 0;
 int16_t g_adsChannel3Raw = 0;
+int16_t g_animationCount = 0;
+const uint32_t wifiOnAnimation[][4] = {{0x1601601, 0xe0, 0x1100000a, 66},
+                                       {0x5605605, 0x400000, 0xe00000a, 66},
+                                       {0x15615615, 0x14410a0, 0x400000a, 66},
+                                       {0x55655655, 0x54050e4, 0x1100000a, 66}};
+const uint32_t wifiOffAnimation[][4] = {
+    {0xfe482082, 0x8208208, 0x20820820, 66},
+    {0xfe4824ba, 0x48208208, 0x20820820, 66},
+    {0xfe4824ba, 0x4824ba48, 0x20820820, 66},
+    {0xfe4824ba, 0x4824ba48, 0x35bae824, 66}};
 
 RTCModule rtcModule;
 SEN5xModule sen5xModule;
@@ -40,13 +50,6 @@ SdFat SD;
 String filename;
 ArduinoLEDMatrix matrix;
 Adafruit_ADS1115 ads;
-
-uint8_t wifiBitmap_On[8][12] = {
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0},
-    {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0}, {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0},
-    {0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0}, {0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0}};
-
 void setup() {
     Serial.begin(115200);
     matrix.begin();  // Initialize LED matrix
@@ -59,7 +62,7 @@ void setup() {
                                // a switch
     wifiMode = digitalRead(7);
 
-    if (wifiMode == LOW) {
+    if (wifiMode != LOW) {
         Serial.println("WiFi mode is ON");
         // If pin 7 is connected to GND, WiFi mode is ON
         // Begin Blynk connection process
@@ -75,10 +78,11 @@ void setup() {
             Serial.println("Error: WiFi did not connect!");
         } else {
             Serial.println("WiFi connected successfully.");
-            matrix.renderBitmap(wifiBitmap_On, 8, 12);
+            matrix.loadFrame(wifiOnAnimation[0]);
         }
     } else {
         Serial.println("WiFi mode is OFF");
+        matrix.loadFrame(wifiOffAnimation[0]);
     }
     delay(2000);  // Wait for serial monitor to be ready
     Serial.println("Initializing modules...");
@@ -101,8 +105,9 @@ void setup() {
     } else {
         Serial.println("ADS1115 initialized successfully.");
     }
-    // 設定預設增益: GAIN_TWOTHIRDS 對應 ±6.144V 範圍，
-    // 每個 LSB 大約 0.1875 mV (0.0001875 V)
+    // set default gain to GAIN_TWOTHIRDS, which corresponds to a range of
+    // ±6.144V
+    //  and each LSB is approximately 0.1875 mV (0.0001875 V)
     ads.setGain(GAIN_TWOTHIRDS);
     // Initialize SD card
     if (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(4))) {
@@ -134,7 +139,7 @@ void setup() {
 }
 
 void loop() {
-    if (wifiMode == LOW) {
+    if (wifiMode != LOW) {
         // If WiFi mode is OFF, do not run Blynk
         Blynk.run();
     }
@@ -181,10 +186,12 @@ void loop() {
     } else {
         Serial.println("Can't write to SD card!");
     }
-    if (wifiMode == LOW) {
+    if (wifiMode != LOW) {
         Serial.println("WiFi mode is ON__loop");
+        matrix.loadFrame(wifiOnAnimation[(g_animationCount++) % 4]);
     } else {
         Serial.println("WiFi mode is OFF__loop");
+        matrix.loadFrame(wifiOffAnimation[(g_animationCount++) % 4]);
     }
     delay(1000);
 }
