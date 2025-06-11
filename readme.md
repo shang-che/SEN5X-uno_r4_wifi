@@ -69,10 +69,14 @@
   - SDA -> SDA
   - SCL -> SCL
 
-# how to use
+# How to use
 
 - put BlynkConfig.h file in the src folder
 - fill in the BlynkConfig.h file with your Blynk auth token and WiFi credentials
 - compile the main.ino file
 - upload the code to the Arduino uno R4 with WiFi
 - you canopen the serial monitor to check the working status
+
+# Development
+
+- this project is developed by ShangChe Liu and Emiliano Zampetti
