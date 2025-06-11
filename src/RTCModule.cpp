@@ -8,8 +8,8 @@ bool RTCModule::begin() {
         return false;
     }
     Serial.println("RTC initialized successfully.");
-    rtc.adjust(DateTime(__DATE__, __TIME__));
-    Serial.println("RTC time set to compile time.");
+    // rtc.adjust(DateTime(__DATE__, __TIME__));
+    // Serial.println("RTC time set to compile time.");
     return true;
 }
 
