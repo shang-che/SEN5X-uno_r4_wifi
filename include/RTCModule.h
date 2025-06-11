@@ -9,6 +9,8 @@ class RTCModule {
     RTCModule();
     bool begin();
     String getTimestamp();
+    String getTimestamphhmm();
+    int getTimeminute();
     float getTemperature();
 
    private:

@@ -15,6 +15,7 @@
 #include "BlynkHandlers.h"
 
 #define MAXTRIX_SPEED 50
+#define MAXTRIX_SPEED_TIME_OUTPUT 75
 #define SD_CS_PIN 9             // SD card chip select pin
 #define WIFI_MODE_SWITCH_PIN 7  // Pin for WiFi mode switch
 
@@ -34,15 +35,17 @@ int16_t g_adsChannel1Raw = 0;
 int16_t g_adsChannel2Raw = 0;
 int16_t g_adsChannel3Raw = 0;
 int16_t g_animationCount = 0;
-const uint32_t wifiOnAnimation[][4] = {{0x1601601, 0xe0, 0x1100000a, 66},
-                                       {0x5605605, 0x400000, 0xe00000a, 66},
-                                       {0x15615615, 0x14410a0, 0x400000a, 66},
-                                       {0x55655655, 0x54050e4, 0x1100000a, 66}};
+int8_t g_timeminute = 0;
+const uint32_t wifiOnAnimation[][4] = {
+    {0x90000, 0x6000000, 0xc00c00, 66},
+    {0x88020, 0x5002401, 0x40d40d40, 66},
+    {0x48000048, 0x3100501, 0x50d50d50, 66},
+    {0x44028144, 0x53950551, 0x55d55d55, 66}};
 const uint32_t wifiOffAnimation[][4] = {
-    {0xfe482082, 0x8208208, 0x20820820, 66},
-    {0xfe4824ba, 0x48208208, 0x20820820, 66},
-    {0xfe4824ba, 0x4824ba48, 0x20820820, 66},
-    {0xfe4824ba, 0x4824ba48, 0x35bae824, 66}};
+    {0x210214a, 0x10210217, 0xa102103f, 66},
+    {0x210214a, 0x10213214, 0xad32103f, 66},
+    {0x210214a, 0x102d4a13, 0x2d02103f, 66},
+    {0x2102d4a, 0x102d4a17, 0xad32103f, 66}};
 
 RTCModule rtcModule;
 SEN5xModule sen5xModule;
@@ -192,6 +195,19 @@ void loop() {
     } else {
         Serial.println("WiFi mode is OFF__loop");
         matrix.loadFrame(wifiOffAnimation[(g_animationCount++) % 4]);
+    }
+    // show the time on the matrix
+    if (g_timeminute != rtcModule.getTimeminute()) {
+        g_timeminute = rtcModule.getTimeminute();
+        matrix.beginDraw();
+        matrix.stroke(0xFFFFFFFF);
+        matrix.textScrollSpeed(MAXTRIX_SPEED_TIME_OUTPUT);
+        matrix.textFont(Font_5x7);
+        String text = rtcModule.getTimestamphhmm();
+        matrix.beginText(0, 1, 0xFFFFFF);
+        matrix.println(text);
+        matrix.endText(SCROLL_LEFT);
+        matrix.endDraw();
     }
     delay(1000);
 }
